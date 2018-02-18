@@ -44,7 +44,7 @@ public class SmartService {
    @Produces(MediaType.APPLICATION_JSON) 
    public ResultTO getEta(RequestTO requestTO){
 		
-		//get route, date
+		//get route, date, check git
 		//for now consider current time. TODO: to be enhanced.
 		String route = requestTO.getRoute();
 		Date travelDateTime = requestTO.getTravelDateTime();
