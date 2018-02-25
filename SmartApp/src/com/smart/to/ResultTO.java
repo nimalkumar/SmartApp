@@ -1,31 +1,28 @@
 package com.smart.to;
 
-import java.util.Date;
-
 public class ResultTO {
 
 	private String route;
-	private Double arrivalDelay;
-	private Date desinationArrivalDateTime;
+	private String arrivalDelay;
+	private String eta;
 	public String getRoute() {
 		return route;
 	}
 	public void setRoute(String route) {
 		this.route = route;
 	}
-	public Double getArrivalDelay() {
+	public String getArrivalDelay() {
 		return arrivalDelay;
 	}
-	public void setArrivalDelay(Double arrivalDelay) {
+	public void setArrivalDelay(String arrivalDelay) {
 		this.arrivalDelay = arrivalDelay;
 	}
-	public Date getDesinationArrivalDateTime() {
-		return desinationArrivalDateTime;
+	public String getEta() {
+		return eta;
 	}
-	public void setDesinationArrivalDateTime(Date desinationArrivalDateTime) {
-		this.desinationArrivalDateTime = desinationArrivalDateTime;
+	public void setEta(String eta) {
+		this.eta = eta;
 	}
-	
 	
 	
 	

@@ -1,18 +1,25 @@
 package com.smart.service;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -27,41 +34,53 @@ import org.codehaus.jackson.map.ObjectWriter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.smart.service.util.SmartServiceUtil;
 import com.smart.to.Input1;
 import com.smart.to.Input2;
 import com.smart.to.Inputs;
 import com.smart.to.PredictSvcRequest;
 import com.smart.to.RequestTO;
 import com.smart.to.ResultTO;
+import com.smart.util.to.VehicleRouteEntity;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
+@Api(value="/")
 
 @Path("/smartService") 
-
 public class SmartService {  
 	
 	@POST 
    @Path("/getEta") 
 	@Consumes(MediaType.APPLICATION_JSON) 
    @Produces(MediaType.APPLICATION_JSON) 
+	
+			 
+	@ApiOperation(value="Get ETA.", response=ResultTO.class)
+	@ApiResponses({ @ApiResponse(code = 200, response = ResultTO.class, message = "Get ETA time") })
    public ResultTO getEta(RequestTO requestTO){
 		
-		//get route, date, check git
-		//for now consider current time. TODO: to be enhanced.
-		String route = requestTO.getRoute();
-		Date travelDateTime = requestTO.getTravelDateTime();
-		if (travelDateTime == null)
-		{
-			travelDateTime = new Date();
-		}
+		//get route from request
+		String routeKey = requestTO.getRouteKey();
 		
 		//gather vehicle info with route 
+		VehicleRouteEntity entity = SmartServiceUtil.getRouteInfo(routeKey);
 		
 		//get traffic info
 		
+		callTrafficService();
+		
 		//get weather info
+		
+		callWeatherService();
+		
 		
 		//call arrival delay prediction service
 		
-		PredictSvcRequest predictSvcRequest = constructPredictSvcRequest(route, travelDateTime);
+		PredictSvcRequest predictSvcRequest = constructPredictSvcRequest(entity.getRoute());
 		
 		
 		String predictedDelay = "0";
@@ -69,8 +88,14 @@ public class SmartService {
 		predictedDelay = callPredictService(predictSvcRequest);
 				
 	   ResultTO resultTO = new ResultTO();
-	   resultTO.setRoute(requestTO.getRoute());
-	   resultTO.setArrivalDelay(Double.parseDouble(predictedDelay));
+	   resultTO.setRoute(entity.getRoute());
+	   int delay = (int) Math.round(Double.parseDouble(predictedDelay));
+	   
+	   resultTO.setArrivalDelay("" + delay + " Mins");
+	   Date now = new Date();
+	   String eta = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+	   resultTO.setEta("Today " + eta + " " + entity.getScheduledArrivalTime());
+	   
       return resultTO; 
    }
 
@@ -151,11 +176,11 @@ public class SmartService {
 	}
 	
 	//service test with default inputs
-	private PredictSvcRequest constructPredictSvcRequest(String route, Date travelDateTime) {
+	private PredictSvcRequest constructPredictSvcRequest(String route) {
 		
 		
 		Calendar calendar = Calendar.getInstance();
-        calendar.setTime(travelDateTime);
+        calendar.setTime(new Date());
         
 		String year = String.valueOf(calendar.get(Calendar.YEAR));
 		String month = String.valueOf(calendar.get(Calendar.MONTH));
@@ -165,7 +190,7 @@ public class SmartService {
 		System.out.println("inputs:" + "year:" + year + "month:" + month + "dayOfMonth:" + dayOfMonth + "dayOfWeek:" + dayOfWeek);
 		
 		SimpleDateFormat localDateFormat = new SimpleDateFormat("HH:mm:ss");
-        String time = localDateFormat.format(travelDateTime);
+        String time = localDateFormat.format(new Date());
 		String originDepTime = String.valueOf(time);
 		
 		PredictSvcRequest predictSvcRequest = new PredictSvcRequest();
@@ -188,15 +213,89 @@ public class SmartService {
 		return predictSvcRequest;
 	}
 	
+	private void callWeatherService()
+	{
+		//Koyambed lat-long 13.069166,80.191388
+		//Guindy lat-long 13.010236, 80.215651
+		//Velachery lat-long 12.975971, 80.221209
+		
+				
+		Client client = ClientBuilder.newClient();
+
+		WebTarget resource = client.target("http://api.openweathermap.org/data/2.5/weather?APPID=ef58070dee8879a5c3f51c871e726d34&lat=13.069166&lon=80.191388");
+
+		Builder request = resource.request();
+		request.accept(MediaType.APPLICATION_JSON);
+
+		Response response = request.get();
+		if (response.getStatus() == 200) {
+		    System.out.println("Success! " + response.getStatus());
+		     System.out.println(response.getEntity());
+		    
+		} else {
+		    System.out.println("ERROR! " + response.getStatus());
+		    System.out.println(response.getEntity());
+		}
+		
+		//System.out.println(response.readEntity(String.class));
+//		jsonMap:{dt=1519399800, coord={lon=80.19, lat=13.07}, visibility=6000, weather=[{icon=02n, description=few clouds, main=Clouds, id=801}], name=Anna Nagar, cod=200, main={temp=298.15, temp_min=298.15, humidity=78, pressure=1012, temp_max=298.15}, clouds={all=20}, id=1465802, sys={country=IN, sunrise=1519347489, sunset=1519390024, id=7834, type=1, message=0.0068}, base=stations, wind={deg=50, speed=2.1}}
+
+		
+		Map jsonMap = response.readEntity(Map.class);
+		System.out.println("jsonMap:" + jsonMap);
+		
+		BigDecimal speed = (BigDecimal) ((Map)jsonMap.get("wind")).get("speed");
+		
+		System.out.println("windspeed:" + speed);
+		
+		//System.out.println("response:" + response);
+	}
+	
+	private void callTrafficService()
+	{
+		//Koyambed lat-long 13.069166,80.191388
+		//Guindy lat-long 13.010236, 80.215651
+		//Velachery lat-long 12.975971, 80.221209
+				
+		Client client = ClientBuilder.newClient();
+
+		WebTarget resource = client.target("https://traffic.cit.api.here.com/traffic/6.1/flow.json?minjamfactor=7&corridor=13.0691%2C80.1913%3B13.0102%2C80.2156%3B12.9759%2C80.2212%3B1000&app_id=tf3yQfmbpouRPrZKlgHR&app_code=GEbZOtQGURCbtgAxlJywFA");
+
+		Builder request = resource.request();
+		request.accept(MediaType.APPLICATION_JSON);
+
+		Response response = request.get();
+		if (response.getStatus() == 200) {
+		    System.out.println("Success! " + response.getStatus());
+		     System.out.println(response.getEntity());
+		    
+		} else {
+		    System.out.println("ERROR! " + response.getStatus());
+		    System.out.println(response.getEntity());
+		}
+		
+		System.out.println(response.readEntity(String.class));
+		
+		/*Map jsonMap = response.readEntity(Map.class);
+		System.out.println("jsonMap:" + jsonMap);
+		
+		BigDecimal speed = (BigDecimal) ((Map)jsonMap.get("wind")).get("speed");
+		
+		System.out.println("windspeed:" + speed);
+	*/	
+		//System.out.println("response:" + response);
+	}
 	
    @GET 
    @Path("/hello") 
    @Produces(MediaType.APPLICATION_JSON) 
+   @ApiOperation(value="Say Hello - Test API", response=ResultTO.class)
+   @ApiResponses({ @ApiResponse(code = 200, response = ResultTO.class, message = "Get a constant response while saying hello") })
    public ResultTO sayHello(){ 
 	   
 	   ResultTO resultTO = new ResultTO();
 	   resultTO.setRoute("R123");
-	   resultTO.setArrivalDelay(30.0);
+	   resultTO.setArrivalDelay("30 Mins");
       return resultTO; 
    }  
 }

@@ -1,22 +1,14 @@
 package com.smart.to;
 
-import java.util.Date;
-
 public class RequestTO {
 
-	private String route;
-	private Date travelDateTime;
-	public String getRoute() {
-		return route;
+	private String routeKey;
+	public String getRouteKey() {
+		return routeKey;
 	}
-	public void setRoute(String route) {
-		this.route = route;
+	public void setRouteKey(String routeKey) {
+		this.routeKey = routeKey;
 	}
-	public Date getTravelDateTime() {
-		return travelDateTime;
-	}
-	public void setTravelDateTime(Date travelDateTime) {
-		this.travelDateTime = travelDateTime;
-	}
+	
 	
 }

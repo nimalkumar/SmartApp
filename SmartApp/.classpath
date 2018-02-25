@@ -23,8 +23,6 @@
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/hk2-utils-2.5.0-b42.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/httpclient-4.5.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/httpcore-4.4.1.jar"/>
-	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jackson-all-1.9.0.jar"/>
-	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jackson-databind-2.1.4.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/javassist-3.22.0-CR2.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/javax.annotation-api-1.2.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/javax.inject-1.jar"/>

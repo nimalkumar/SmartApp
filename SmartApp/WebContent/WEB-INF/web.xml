@@ -10,11 +10,18 @@
       <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class> 
       <init-param> 
          <param-name>jersey.config.server.provider.packages</param-name> 
-         <param-value>com.smart.service</param-value> 
+         <param-value>io.swagger.jaxrs.listing,com.smart.service</param-value> 
       </init-param> 
+      
    </servlet> 
    <servlet-mapping> 
       <servlet-name>Jersey RESTful Application</servlet-name> 
       <url-pattern>/rest/*</url-pattern> 
    </servlet-mapping>   
+    <servlet>
+        <servlet-name>Jersey2Config</servlet-name>
+        <servlet-class>com.smart.service.SwaggerConfiguration</servlet-class>
+        
+        <load-on-startup>2</load-on-startup>
+    </servlet>
 </web-app>
