@@ -1,25 +1,57 @@
 package com.smart.service.util;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.microsoft.azure.storage.CloudStorageAccount;
-import com.microsoft.azure.storage.table.CloudTable;
-import com.microsoft.azure.storage.table.CloudTableClient;
-import com.microsoft.azure.storage.table.TableQuery;
-import com.microsoft.azure.storage.table.TableQuery.QueryComparisons;
-import com.smart.util.to.VehicleRouteEntity;
+import com.microsoft.azure.storage.blob.CloudBlobClient;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
+import com.microsoft.azure.storage.blob.CloudBlockBlob;
+import com.smart.util.to.RouteInfoTO;
 
 
 public class SmartServiceUtil {
 
 	private static Map routeInfoMap;
+	private static List holidayInfoList;
 	
-	private static Map getRouteInfoMap()
-	{
+	
+	
+	public static Map getRouteInfoMap() {
 		if (routeInfoMap == null)
 		{
+			loadReferenceMaps();
+		}
+		return routeInfoMap;
+	}
+
+	public static List getHolidayInfoList() {
+		if (holidayInfoList == null)
+		{
+			loadReferenceMaps();
+		}
+		return holidayInfoList;
+	}
+
+	private static Map loadReferenceMaps()
+	{
+		if (routeInfoMap == null || holidayInfoList == null)
+		{
 			routeInfoMap = new HashMap(); 
+			holidayInfoList = new ArrayList();
 			String storageConnectionString =
 				    "DefaultEndpointsProtocol=http;" +
 				    "AccountName=mytrafficdatablobstorage;" +
@@ -32,36 +64,85 @@ public class SmartServiceUtil {
 			    final String PARTITION_KEY = "PartitionKey";
 			    final String ROW_KEY = "RowKey";
 			    
-			    // Retrieve storage account from connection-string.
-			    CloudStorageAccount storageAccount =
-			        CloudStorageAccount.parse(storageConnectionString);
+			    
+			 // Retrieve storage account from connection-string.
+			    CloudStorageAccount storageAccount = CloudStorageAccount.parse(storageConnectionString);
 
-			    // Create the table client.
-			    CloudTableClient tableClient = storageAccount.createCloudTableClient();
+			    // Create the blob client.
+			    CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
 
-			    // Create a cloud table object for the table.
-			    CloudTable cloudTable = tableClient.getTableReference("VehicleRouteReference");
+			    // Get a reference to a container.
+			    // The container name must be lower case
+			    CloudBlobContainer container = blobClient.getContainerReference("mycontainer");
 
-			    // Create a filter condition where the partition key is "Smith".
-			    String partitionFilter = TableQuery.generateFilterCondition(
-			        PARTITION_KEY,
-			        QueryComparisons.EQUAL,
-			        "RouteInfo_2018");
-
-			    // Specify a partition query, using "Smith" as the partition key filter.
-			    TableQuery<VehicleRouteEntity> partitionQuery =
-			        TableQuery.from(VehicleRouteEntity.class)
-			        .where(partitionFilter);
-
-			    // Loop through the results, displaying information about the entity.
-			    for (VehicleRouteEntity entity : cloudTable.execute(partitionQuery)) {
-			        
-			    	routeInfoMap.put(entity.getRouteTripKey(), entity);
-			    	/*System.out.println(entity.getPartitionKey() +
-			            " " + entity.getRowKey() +
-			            "\t" + entity.getRouteTripKey() +
-			            "\t" + entity.getScheduledArrivalTime());*/
-			    }
+			    //HOLIDAY REFERENCE LIST
+			    //Write the contents of the file to the console.
+			    CloudBlockBlob blob = container.getBlockBlobReference("HolidayReferenceData.csv");
+			    String contentFromBlob = blob.downloadText();
+			    
+			    List<String> tempLines = Arrays.asList(contentFromBlob.split("\n"));
+		        
+		        boolean isFirstLine = true;
+		        for (String line : tempLines) {
+		        	
+		        	//skip first line header
+		        	if (isFirstLine)
+		        	{
+		        		isFirstLine = false;
+		        	}
+		        	else
+		        	{	
+		        		line = line.replaceAll("\"", "");
+		        		
+			        	//Remove whitespace and split by comma
+			            List<String> eachLine = Arrays.asList(line.split("\\s*,\\s*"));
+			            String dateStr = eachLine.get(1) + "/" + eachLine.get(2) + "/" + eachLine.get(0);
+			            SimpleDateFormat fmt = new SimpleDateFormat("MM/dd/yyyy");
+			            holidayInfoList.add(fmt.format(fmt.parse(dateStr)));
+			            
+		        	}	
+		        }
+		        
+		      //ROUTE REFERENCE LIST
+			    //Write the contents of the file to the console.
+			    blob = container.getBlockBlobReference("TimeCalculatorReferenceData.csv");
+			    contentFromBlob = blob.downloadText();
+			    
+			    tempLines = Arrays.asList(contentFromBlob.split("\n"));
+		        
+		        isFirstLine = true;
+		        for (String line : tempLines) {
+		        	
+		        	//skip first line header
+		        	if (isFirstLine)
+		        	{
+		        		isFirstLine = false;
+		        	}
+		        	else
+		        	{	
+		        		line = line.replaceAll("\"", "");
+		        		
+			        	//Remove whitespace and split by comma
+			            List<String> eachLine = Arrays.asList(line.split("\\s*,\\s*"));
+			            //RouteID-TripID-StopID
+			            String key = eachLine.get(0) + "-" + eachLine.get(2) + "-" + eachLine.get(1);
+			            //System.out.println(key);
+			            
+			            RouteInfoTO to = new RouteInfoTO();
+			            to.setRoute(eachLine.get(0));
+			            to.setScheduledArrivalTime(eachLine.get(3));
+			            to.setScheduledDepartureTime(eachLine.get(5).replace("\n", "").replace("\r", ""));
+			            to.setStopID(eachLine.get(1));
+			            to.setTripID(eachLine.get(2));
+			            
+			            routeInfoMap.put(key, to);
+			            
+		        	}	
+		        }
+			    
+		        //System.out.println("HolidayInfoList:" + holidayInfoList);
+		        //System.out.println("RouteInfoMap:" + routeInfoMap);
+			    
 			}
 			catch (Exception e)
 			{
@@ -71,31 +152,77 @@ public class SmartServiceUtil {
 		}
 		return routeInfoMap;
 	}
-	
-	public static VehicleRouteEntity getRouteInfo(String routeKey)
-	{
-		VehicleRouteEntity entity = (VehicleRouteEntity) getRouteInfoMap().get(routeKey);
-		//TODO: Test only for invalid inputs
-		if (entity == null)
-		{
-			entity = new VehicleRouteEntity();
-			entity.setDestinationID("T1");
-			entity.setEtag("T1");
-			entity.setPartitionKey("T1");
-			entity.setRoute("T1");
-			entity.setRouteTripKey("T1");
-			entity.setRowKey("T1");
-			entity.setScheduledArrivalTime("T1");
-			entity.setScheduledDepartureTime("T1");
-			entity.setSourceID("T1");
-			
-		}
-		return entity;
 		
+	
+	private void callTrafficService()
+	{
+		//Koyambed lat-long 13.069166,80.191388
+		//Guindy lat-long 13.010236, 80.215651
+		//Velachery lat-long 12.975971, 80.221209
+				
+		Client client = ClientBuilder.newClient();
+
+		WebTarget resource = client.target("https://traffic.cit.api.here.com/traffic/6.1/flow.json?minjamfactor=7&corridor=13.0691%2C80.1913%3B13.0102%2C80.2156%3B12.9759%2C80.2212%3B1000&app_id=tf3yQfmbpouRPrZKlgHR&app_code=GEbZOtQGURCbtgAxlJywFA");
+
+		Builder request = resource.request();
+		request.accept(MediaType.APPLICATION_JSON);
+
+		Response response = request.get();
+		if (response.getStatus() == 200) {
+		    System.out.println("Success! " + response.getStatus());
+		     System.out.println(response.getEntity());
+		    
+		} else {
+		    System.out.println("ERROR! " + response.getStatus());
+		    System.out.println(response.getEntity());
+		}
+		
+		System.out.println(response.readEntity(String.class));
+		
+		/*Map jsonMap = response.readEntity(Map.class);
+		System.out.println("jsonMap:" + jsonMap);
+		
+		BigDecimal speed = (BigDecimal) ((Map)jsonMap.get("wind")).get("speed");
+		
+		System.out.println("windspeed:" + speed);
+	*/	
+		//System.out.println("response:" + response);
 	}
 	
-	public static void main (String arg[])
+	public static void main (String arg[]) throws Exception
 	{
-		getRouteInfoMap();
+		/*loadReferenceMaps();
+		System.out.println("Self Test - Load Reference Data from Azure Blob");
+		System.out.println("Route Info Map:" + routeInfoMap);
+		System.out.println("Holiday Info List:" + holidayInfoList);*/
+
+		String adjHolidayInd = "No";
+		List holidayList = SmartServiceUtil.getHolidayInfoList();
+		
+		System.out.println(holidayList);
+		
+		Calendar c = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+		
+		//Check if Next day holiday
+		Date travelDate = sdf.parse("01/02/2018");
+		c.setTime(travelDate);
+		c.add(Calendar.DATE, 1); 
+		System.out.println("next day:" + sdf.format(c.getTime()));
+		adjHolidayInd = (holidayList.contains(sdf.format(c.getTime())))?"Yes":"No";
+		
+		//Check if Previous day holiday
+		if  (adjHolidayInd.equals("No"))
+		{
+			c.setTime(travelDate);
+			c.add(Calendar.DATE, -1); 
+			System.out.println("prev day:" + sdf.format(c.getTime()));
+			adjHolidayInd = (holidayList.contains(sdf.format(c.getTime())))?"Yes":"No";
+		}
+		System.out.println(adjHolidayInd);
+		
+		//constructPredictServiceRequest();
 	}
+
+	
 }
