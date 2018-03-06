@@ -16,7 +16,21 @@ public class ResultTO {
 	private String eta;
 	private String generatedTs;
 	private String scheduledArrivalTime;
+	private String userGeneralWarning;
+	private String userMajorWarning;
 	
+	public String getUserGeneralWarning() {
+		return userGeneralWarning;
+	}
+	public void setUserGeneralWarning(String userGeneralWarning) {
+		this.userGeneralWarning = userGeneralWarning;
+	}
+	public String getUserMajorWarning() {
+		return userMajorWarning;
+	}
+	public void setUserMajorWarning(String userMajorWarning) {
+		this.userMajorWarning = userMajorWarning;
+	}
 	public String getVehicleFactor() {
 		return vehicleFactor;
 	}
@@ -107,12 +121,9 @@ public class ResultTO {
 				+ ", source=" + source + ", trafficFactor=" + trafficFactor + ", weatherFactor=" + weatherFactor
 				+ ", vehicleFactor=" + vehicleFactor + ", otherFactor=" + otherFactor + ", additionalInfo="
 				+ additionalInfo + ", arrivalDelay=" + arrivalDelay + ", eta=" + eta + ", generatedTs=" + generatedTs
-				+ ", scheduledArrivalTime=" + scheduledArrivalTime + "]";
+				+ ", scheduledArrivalTime=" + scheduledArrivalTime + ", userGeneralWarning=" + userGeneralWarning
+				+ ", userMajorWarning=" + userMajorWarning + "]";
 	}
-	
-	
-	
-	
 	
 	
 }

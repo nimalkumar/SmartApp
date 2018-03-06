@@ -4,13 +4,14 @@ import java.util.Date;
 
 public class RequestTO {
 
-	private String routeKey;
+	private String userInput;
 	private String travelDate;
-	public String getRouteKey() {
-		return routeKey;
+	
+	public String getUserInput() {
+		return userInput;
 	}
-	public void setRouteKey(String routeKey) {
-		this.routeKey = routeKey;
+	public void setUserInput(String userInput) {
+		this.userInput = userInput;
 	}
 	public String getTravelDate() {
 		return travelDate;
@@ -20,7 +21,7 @@ public class RequestTO {
 	}
 	@Override
 	public String toString() {
-		return "RequestTO [routeKey=" + routeKey + ", travelDate=" + travelDate + "]";
+		return "RequestTO [userInput=" + userInput + ", travelDate=" + travelDate + "]";
 	}
 	
 	

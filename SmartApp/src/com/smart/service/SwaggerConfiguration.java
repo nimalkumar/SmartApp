@@ -13,11 +13,13 @@ public class SwaggerConfiguration extends HttpServlet{
 		BeanConfig beanConfig = new BeanConfig();
 		beanConfig.setTitle("iTrack-SmartService");
 		beanConfig.setVersion("1.0");
-		beanConfig.setSchemes(new String[]{"https"});
+		
 		//For local
+		//beanConfig.setSchemes(new String[]{"http"});
 		//beanConfig.setHost("localhost:8080");
 		//beanConfig.setBasePath("/SmartApp/rest");
 		//For azure deployment
+		beanConfig.setSchemes(new String[]{"https"});
 		beanConfig.setHost("webapp-smartapp.azurewebsites.net");
 		beanConfig.setBasePath("/rest");
 		

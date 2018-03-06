@@ -64,8 +64,30 @@ public class SmartService {
 		ResultTO resultTO = new ResultTO();
 		
 		try {
-			//get combination of route-trip-stop key from request; Format expected: "D70-11-4"
-			String routeTripStopKey = requestTO.getRouteKey();
+			String routeTripStopKey = "";
+			
+			//get userinput and determine if it's a ticketnumber or routekey
+			String userInput = requestTO.getUserInput();
+			String ticketPattern = "^n[0-9]{4}[a-z]";
+			String routeKeyPattern = "^[A-Z][0-9]{2}-[0-9]{1,2}-[0-9]";
+			if (userInput.matches(ticketPattern))
+			{
+				//It's a ticket number entered
+				routeTripStopKey = (String) SmartServiceUtil.getTicketMap().get(userInput.toLowerCase());
+				
+			}
+			else if (userInput.matches(routeKeyPattern))
+			{
+				//It's a route Key given
+				routeTripStopKey = userInput;
+			}
+			else
+			{
+				routeTripStopKey = "Not supported";
+				System.out.println("Not supported at the moment");
+				throw new Exception("Request Failed. Please enter valid Ticket Number or Route Key.");
+			}
+				
 			
 			//get optional date info from request; Format expected "MM/dd/yyyy"
 			String travelDateStr = requestTO.getTravelDate();
@@ -87,6 +109,7 @@ public class SmartService {
 				}
 				
 			}
+			
 			VehicleInfoTO vehicleInfoTO = constructVehicleInfoTO(routeTripStopKey, travelDate);
 			WeatherInfoTO weatherInfoTO = constructWeatherInfoTO(travelDate);
 			TrafficInfoTO trafficInfoTO = constructTrafficInfoTO(vehicleInfoTO, travelDate);
@@ -124,6 +147,21 @@ public class SmartService {
 					}
 		   resultTO.setScheduledArrivalTime(vehicleInfoTO.getScheduledArrivalTime());
 		   resultTO.setEta(eta);
+		   
+		   
+		 //Check for vehicle breakdown scenario
+			//Check against the latest data available in dump table
+			//Get routeName, TripID
+			//Find the entry for the given routeName-Trip-geoloc, count
+			if (! SmartServiceUtil.isVehicleMoving(vehicleInfoTO.getRoute(), vehicleInfoTO.getTripID()))
+			{
+				resultTO.setUserMajorWarning("Expected Major Delay as Vehicle movement has stopped for a while. We can assist you with alternate travel arrangements.");
+				resultTO.setEta("Major Delay");
+				resultTO.setArrivalDelay("Not Available");
+			}
+			
+			//if count is more than "customizable value" then consider to send a warning!
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			resultTO.setAdditionalInfo("WARNING! Feverish while calculating ETA. Info:" + e.getMessage());
