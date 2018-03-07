@@ -10,7 +10,7 @@
       <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class> 
       <init-param> 
          <param-name>jersey.config.server.provider.packages</param-name> 
-         <param-value>io.swagger.jaxrs.listing,com.smart.service</param-value> 
+         <param-value>io.swagger.jaxrs.listing,com.smart.service, com.smart.emulator</param-value> 
       </init-param> 
       
    </servlet> 

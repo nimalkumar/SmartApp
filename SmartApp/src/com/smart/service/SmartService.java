@@ -55,8 +55,6 @@ public class SmartService {
    @Path("/getEta") 
 	@Consumes(MediaType.APPLICATION_JSON) 
    @Produces(MediaType.APPLICATION_JSON) 
-	
-			 
 	@ApiOperation(value="Get ETA.", response=ResultTO.class)
 	@ApiResponses({ @ApiResponse(code = 200, response = ResultTO.class, message = "Get ETA time") })
    public ResultTO getEta(RequestTO requestTO){
