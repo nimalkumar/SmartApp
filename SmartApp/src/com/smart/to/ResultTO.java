@@ -16,20 +16,78 @@ public class ResultTO {
 	private String eta;
 	private String generatedTs;
 	private String scheduledArrivalTime;
-	private String userGeneralWarning;
-	private String userMajorWarning;
+	private boolean generalWarningInd;
+	private String generalWarningMsg;
+	private String majorWarningMessage;
+	private boolean majorWarningInd;
+	private String timeLastKnown;
+	private String latitudeLastKnown;
+	private String longitudeLastKnown;
+	private String trafficIndication;
+	private String weatherIndication;
+	private String holidayAdjIndication;
+
 	
-	public String getUserGeneralWarning() {
-		return userGeneralWarning;
+	
+	public String getTrafficIndication() {
+		return trafficIndication;
 	}
-	public void setUserGeneralWarning(String userGeneralWarning) {
-		this.userGeneralWarning = userGeneralWarning;
+	public void setTrafficIndication(String trafficIndication) {
+		this.trafficIndication = trafficIndication;
 	}
-	public String getUserMajorWarning() {
-		return userMajorWarning;
+	public String getWeatherIndication() {
+		return weatherIndication;
 	}
-	public void setUserMajorWarning(String userMajorWarning) {
-		this.userMajorWarning = userMajorWarning;
+	public void setWeatherIndication(String weatherIndication) {
+		this.weatherIndication = weatherIndication;
+	}
+	public String getHolidayAdjIndication() {
+		return holidayAdjIndication;
+	}
+	public void setHolidayAdjIndication(String holidayAdjIndication) {
+		this.holidayAdjIndication = holidayAdjIndication;
+	}
+	public String getTimeLastKnown() {
+		return timeLastKnown;
+	}
+	public void setTimeLastKnown(String timeLastKnown) {
+		this.timeLastKnown = timeLastKnown;
+	}
+	public String getLatitudeLastKnown() {
+		return latitudeLastKnown;
+	}
+	public void setLatitudeLastKnown(String latitudeLastKnown) {
+		this.latitudeLastKnown = latitudeLastKnown;
+	}
+	public String getLongitudeLastKnown() {
+		return longitudeLastKnown;
+	}
+	public void setLongitudeLastKnown(String longitudeLastKnown) {
+		this.longitudeLastKnown = longitudeLastKnown;
+	}
+	public boolean isGeneralWarningInd() {
+		return generalWarningInd;
+	}
+	public void setGeneralWarningInd(boolean generalWarningInd) {
+		this.generalWarningInd = generalWarningInd;
+	}
+	public String getGeneralWarningMsg() {
+		return generalWarningMsg;
+	}
+	public void setGeneralWarningMsg(String generalWarningMsg) {
+		this.generalWarningMsg = generalWarningMsg;
+	}
+	public String getMajorWarningMessage() {
+		return majorWarningMessage;
+	}
+	public void setMajorWarningMessage(String majorWarningMessage) {
+		this.majorWarningMessage = majorWarningMessage;
+	}
+	public boolean isMajorWarningInd() {
+		return majorWarningInd;
+	}
+	public void setMajorWarningInd(boolean majorWarningInd) {
+		this.majorWarningInd = majorWarningInd;
 	}
 	public String getVehicleFactor() {
 		return vehicleFactor;
@@ -121,9 +179,16 @@ public class ResultTO {
 				+ ", source=" + source + ", trafficFactor=" + trafficFactor + ", weatherFactor=" + weatherFactor
 				+ ", vehicleFactor=" + vehicleFactor + ", otherFactor=" + otherFactor + ", additionalInfo="
 				+ additionalInfo + ", arrivalDelay=" + arrivalDelay + ", eta=" + eta + ", generatedTs=" + generatedTs
-				+ ", scheduledArrivalTime=" + scheduledArrivalTime + ", userGeneralWarning=" + userGeneralWarning
-				+ ", userMajorWarning=" + userMajorWarning + "]";
+				+ ", scheduledArrivalTime=" + scheduledArrivalTime + ", generalWarningInd=" + generalWarningInd
+				+ ", generalWarningMsg=" + generalWarningMsg + ", majorWarningMessage=" + majorWarningMessage
+				+ ", majorWarningInd=" + majorWarningInd + ", timeLastKnown=" + timeLastKnown + ", latitudeLastKnown="
+				+ latitudeLastKnown + ", longitudeLastKnown=" + longitudeLastKnown + ", trafficIndication="
+				+ trafficIndication + ", weatherIndication=" + weatherIndication + ", holidayAdjIndication="
+				+ holidayAdjIndication + "]";
 	}
+	
+	
+	
 	
 	
 }

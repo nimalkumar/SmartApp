@@ -17,6 +17,7 @@ import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.smart.util.to.RouteInfoTO;
+import com.smart.util.to.VehicleLiveInfoTO;
 
 
 public class SmartServiceUtil {
@@ -168,10 +169,15 @@ public class SmartServiceUtil {
 		}
 	}
 		
-	public static boolean isVehicleMoving(String routeName, String tripID)
+	public static VehicleLiveInfoTO getVehicleLiveInfo(String routeName, String tripID)
 	{
+		VehicleLiveInfoTO vehicleLiveInfoTO = new VehicleLiveInfoTO();
+		boolean isVehicleMoving = true;
+		Date timeLastKnownDt = null;
+		String latitudeLastKnown = "NA";
+		String longitudeLastKnown = "NA";
 		
-			Map vehiclePositionMap = new HashMap(); 
+		SimpleDateFormat fmt = new SimpleDateFormat("HH:mm:ss");
 			try
 			{
 			    Map vehiclePositioningInfoMap = new HashMap();
@@ -186,29 +192,48 @@ public class SmartServiceUtil {
 
 			    //HOLIDAY REFERENCE LIST
 			    //Write the contents of the file to the console.
-			    CloudBlockBlob blob = container.getBlockBlobReference("VehiclePositioningData.json");
+			    CloudBlockBlob blob = container.getBlockBlobReference("VehiclePositionLiveFeed/0_d840691a587c4f2883056b552fbdcd53_1.json");
 			    String contentFromBlob = blob.downloadText();
 			    
-			    JSONArray jsonObjArray = new JSONArray(contentFromBlob);
-			    
-			    int length = jsonObjArray.length();
-			    
+			    String[] lines = contentFromBlob.split(System.getProperty("line.separator"));
+	            
+			    int length=lines.length;
 	            
 			    for (int i=0; i < length; i++)
 			    {
-			    	JSONObject jsonObj = jsonObjArray.getJSONObject(i);
-			    	if (jsonObj != null && routeName.equalsIgnoreCase(jsonObj.getString("RouteName")) 
-			    			&& tripID.equalsIgnoreCase(jsonObj.getString("TripID")))
+			    	JSONObject jsonObj = new JSONObject(lines[i]);
+			    	if (jsonObj != null && routeName.equalsIgnoreCase(jsonObj.getString("routename")) 
+			    			&& tripID.equalsIgnoreCase(jsonObj.getString("tripid")))
 			    	{
 			    		System.out.println(jsonObj);
-			    		String key = jsonObj.getString("RouteName") + "-" + jsonObj.getString("TripID") + "-" + jsonObj.getString("Geolocation");
-				    	//String dateStr = jsonObj.get("MonthValue") + "/" + jsonObj.get("DateValue") + "/" + jsonObj.get("YearValue");
+			    		String key = jsonObj.getString("routename") + "-" + jsonObj.getString("tripid") + "-" + jsonObj.getString("geolocation");
 			            
+			    		String feedTimeStr = "" + jsonObj.get("hourvalue") + ":" + jsonObj.get("minutevalue") + ":" + jsonObj.get("secondvalue");
+			    		
+			    		Date feedTime = fmt.parse(feedTimeStr);
+			    		
+			    		if (timeLastKnownDt == null)
+			    		{
+			    			timeLastKnownDt = feedTime;
+			    			String geolocation = jsonObj.getString("geolocation");
+			    			String[] geolocationArr = geolocation.split(",");
+			    			latitudeLastKnown = geolocationArr[0];
+			    			longitudeLastKnown = geolocationArr[1];
+			    		}
+			    		else if (feedTime.compareTo(timeLastKnownDt) > 0)
+			    		{
+			    			timeLastKnownDt = feedTime;
+			    			String geolocation = jsonObj.getString("geolocation");
+			    			String[] geolocationArr = geolocation.split(",");
+			    			latitudeLastKnown = geolocationArr[0];
+			    			longitudeLastKnown = geolocationArr[1];
+			    		}
+			    		
 			    		if (vehiclePositioningInfoMap.get(key) != null)
 			    		{
 			    			if ((Integer)vehiclePositioningInfoMap.get(key) > 6)
 			    			{
-			    				return false;
+			    				isVehicleMoving = false;
 			    			}
 			    			vehiclePositioningInfoMap.put(key, (Integer)vehiclePositioningInfoMap.get(key)+1);
 			    		}
@@ -227,7 +252,16 @@ public class SmartServiceUtil {
 			    // Output the stack trace.
 			    e.printStackTrace();
 			}
-		return true;
+			vehicleLiveInfoTO.setVehicleMoving(isVehicleMoving);
+			if (timeLastKnownDt != null)
+			{
+				SimpleDateFormat fmt2 = new SimpleDateFormat("HH:mm:ss");
+				vehicleLiveInfoTO.setTimeLastKnown(fmt2.format(timeLastKnownDt));
+			}
+			vehicleLiveInfoTO.setLatitudeLastKnown(latitudeLastKnown);
+			vehicleLiveInfoTO.setLongitudeLastKnown(longitudeLastKnown);
+			
+			return vehicleLiveInfoTO;
 	}
 	
 		public static void main (String arg[]) throws Exception
@@ -249,23 +283,20 @@ public class SmartServiceUtil {
 
 		    //HOLIDAY REFERENCE LIST
 		    //Write the contents of the file to the console.
-		    CloudBlockBlob blob = container.getBlockBlobReference("VehiclePositioningData.json");
+		    CloudBlockBlob blob = container.getBlockBlobReference("VehiclePositionLiveFeed/0_d840691a587c4f2883056b552fbdcd53_1.json");
 		    String contentFromBlob = blob.downloadText();
 		    
-		    JSONArray jsonObjArray = new JSONArray(contentFromBlob);
-		    
-		    int length = jsonObjArray.length();
-		    
+		    String[] lines = contentFromBlob.split(System.getProperty("line.separator"));
             
+		    int length=lines.length;
 		    for (int i=0; i < length; i++)
 		    {
-		    	JSONObject jsonObj = jsonObjArray.getJSONObject(i);
+		    	JSONObject jsonObj = new JSONObject(lines[i]);
 		    	if (jsonObj != null)
 		    	{
 		    		System.out.println(jsonObj);
-		    		String key = jsonObj.getString("RouteName") + "-" + jsonObj.getString("TripID") + "-" + jsonObj.getString("Geolocation");
-			    	//String dateStr = jsonObj.get("MonthValue") + "/" + jsonObj.get("DateValue") + "/" + jsonObj.get("YearValue");
-		            
+		    		String key = jsonObj.getString("routename") + "-" + jsonObj.getString("tripid") + "-" + jsonObj.getString("geolocation");
+			    	
 		    		if (vehiclePositioningInfoMap.get(key) != null)
 		    		{
 		    			vehiclePositioningInfoMap.put(key, (Integer)vehiclePositioningInfoMap.get(key)+1);

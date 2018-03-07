@@ -39,6 +39,7 @@ import com.smart.to.ResultTO;
 import com.smart.util.to.RouteInfoTO;
 import com.smart.util.to.TrafficInfoTO;
 import com.smart.util.to.VehicleInfoTO;
+import com.smart.util.to.VehicleLiveInfoTO;
 import com.smart.util.to.WeatherInfoTO;
 
 import io.swagger.annotations.Api;
@@ -85,7 +86,6 @@ public class SmartService {
 				System.out.println("Not supported at the moment");
 				throw new Exception("Request Failed. Please enter valid Ticket Number or Route Key.");
 			}
-				
 			
 			//get optional date info from request; Format expected "MM/dd/yyyy"
 			String travelDateStr = requestTO.getTravelDate();
@@ -120,8 +120,11 @@ public class SmartService {
    
 		   resultTO.setRoute(vehicleInfoTO.getRoute());
 		   resultTO.setWeatherFactor(weatherInfoTO.printFactors());
+		   resultTO.setWeatherIndication(weatherInfoTO.getEvent());
 		   resultTO.setTrafficFactor(trafficInfoTO.printFactors());
+		   resultTO.setTrafficIndication(trafficInfoTO.getTrafficCongestionIndex());
 		   resultTO.setVehicleFactor(vehicleInfoTO.printFactors());
+		   resultTO.setHolidayAdjIndication(vehicleInfoTO.getAdjHolidayInd());
 		   
 		   int delay = (int) Math.round(Double.parseDouble(predictedDelay));
 		   
@@ -151,14 +154,21 @@ public class SmartService {
 			//Check against the latest data available in dump table
 			//Get routeName, TripID
 			//Find the entry for the given routeName-Trip-geoloc, count
-			if (! SmartServiceUtil.isVehicleMoving(vehicleInfoTO.getRoute(), vehicleInfoTO.getTripID()))
+		   VehicleLiveInfoTO vehicleLiveInfoTO = SmartServiceUtil.getVehicleLiveInfo(vehicleInfoTO.getRoute(), vehicleInfoTO.getTripID());
+			if (! vehicleLiveInfoTO.isVehicleMoving() )
 			{
-				resultTO.setUserMajorWarning("Expected Major Delay as Vehicle movement has stopped for a while. We can assist you with alternate travel arrangements.");
+				resultTO.setMajorWarningInd(true);
+				resultTO.setMajorWarningMessage("Expected Major Delay as Vehicle movement has stopped for a while. We can assist you with alternate travel arrangements.");
 				resultTO.setEta("Major Delay");
 				resultTO.setArrivalDelay("Not Available");
 			}
+			resultTO.setTimeLastKnown(vehicleLiveInfoTO.getTimeLastKnown());
+			resultTO.setLatitudeLastKnown(vehicleLiveInfoTO.getLatitudeLastKnown());
+			resultTO.setLongitudeLastKnown(vehicleLiveInfoTO.getLongitudeLastKnown());
 			
-			//if count is more than "customizable value" then consider to send a warning!
+			//TODO remove hardcoded
+			resultTO.setSource("Koyambed");
+			resultTO.setDestination("Velachery");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
