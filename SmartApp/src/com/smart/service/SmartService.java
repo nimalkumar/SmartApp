@@ -9,11 +9,13 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -30,6 +32,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import java.util.logging.Level;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -52,6 +55,9 @@ import io.swagger.annotations.ApiResponses;
 @Path("/smartService") 
 public class SmartService {  
 	
+	Logger logger = Logger.getGlobal();
+	
+	
 	@POST 
    @Path("/getEta") 
 	@Consumes(MediaType.APPLICATION_JSON) 
@@ -68,7 +74,7 @@ public class SmartService {
 			//get userinput and determine if it's a ticketnumber or routekey
 			String userInput = requestTO.getUserInput();
 			String ticketPattern = "^n[0-9]{4}[a-z]";
-			String routeKeyPattern = "^[A-Z][0-9]{2}-[0-9]{1,2}-[0-9]";
+			String routeKeyPattern = "^[A-Z,a-z,0-9]{1,10}-[0-9]{1,2}-[0-9]";
 			if (userInput.matches(ticketPattern))
 			{
 				//It's a ticket number entered
@@ -83,9 +89,15 @@ public class SmartService {
 			else
 			{
 				routeTripStopKey = "Not supported";
+				logger.log(Level.ALL, "aNot supported at the moment:" + userInput);
+				logger.log(Level.INFO, "iNot supported at the moment:" + userInput);
+				logger.log(Level.SEVERE, "iNot supported at the moment:" + userInput);
 				System.out.println("Not supported at the moment");
 				throw new Exception("Request Failed. Please enter valid Ticket Number or Route Key.");
 			}
+			
+			logger.log(Level.ALL, "arouteTripStopKey:" + routeTripStopKey);
+			logger.log(Level.INFO, "irouteTripStopKey:" + routeTripStopKey);
 			
 			//get optional date info from request; Format expected "MM/dd/yyyy"
 			String travelDateStr = requestTO.getTravelDate();
@@ -128,7 +140,7 @@ public class SmartService {
 		   
 		   int delay = (int) Math.round(Double.parseDouble(predictedDelay));
 		   
-		   resultTO.setArrivalDelay("" + delay + " Mins");
+		   resultTO.setArrivalDelayMins(delay);
    
 		   Date now = new Date();
 		   String nowstr = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
@@ -160,15 +172,17 @@ public class SmartService {
 				resultTO.setMajorWarningInd(true);
 				resultTO.setMajorWarningMessage("Expected Major Delay as Vehicle movement has stopped for a while. We can assist you with alternate travel arrangements.");
 				resultTO.setEta("Major Delay");
-				resultTO.setArrivalDelay("Not Available");
+				resultTO.setArrivalDelayMins(999);
 			}
 			resultTO.setTimeLastKnown(vehicleLiveInfoTO.getTimeLastKnown());
-			resultTO.setLatitudeLastKnown(vehicleLiveInfoTO.getLatitudeLastKnown());
-			resultTO.setLongitudeLastKnown(vehicleLiveInfoTO.getLongitudeLastKnown());
+			resultTO.setLatitudeLastKnown(Double.valueOf(vehicleLiveInfoTO.getLatitudeLastKnown()));
+			resultTO.setLongitudeLastKnown(Double.valueOf(vehicleLiveInfoTO.getLongitudeLastKnown()));
 			
-			//TODO remove hardcoded
-			resultTO.setSource("Koyambed");
-			resultTO.setDestination("Velachery");
+			//get source and destination names
+			String sourceStopKey = vehicleInfoTO.getRoute()+"-1";
+			String destStopKey = vehicleInfoTO.getRoute()+"-"+vehicleInfoTO.getStopID();
+			resultTO.setSource((String) SmartServiceUtil.getStopNameMap().get(sourceStopKey));
+			resultTO.setDestination((String) SmartServiceUtil.getStopNameMap().get(destStopKey));
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -177,6 +191,19 @@ public class SmartService {
 	   
       return resultTO; 
    }
+	
+	@GET 
+	   @Path("/getVehicleLocation/{routeName}/{tripID}") 
+		@Consumes(MediaType.APPLICATION_JSON) 
+	   @Produces(MediaType.APPLICATION_JSON) 
+		@ApiOperation(value="Get Vehicle Geo Location.", response=VehicleLiveInfoTO.class)
+		@ApiResponses({ @ApiResponse(code = 200, response = VehicleLiveInfoTO.class, message = "Get Vehicle Geo Location") })
+	   public VehicleLiveInfoTO getVehicleLocation(@PathParam("routeName") String routeName, @PathParam("tripID") String tripID){
+			
+		VehicleLiveInfoTO vehicleLiveInfoTO = SmartServiceUtil.getVehicleLiveInfo(routeName, tripID);
+		
+		return vehicleLiveInfoTO;
+	}
 
 
 	private TrafficInfoTO constructTrafficInfoTO(VehicleInfoTO vehicleInfoTO, Date travelDate) {
@@ -532,7 +559,7 @@ public class SmartService {
 	   
 	   ResultTO resultTO = new ResultTO();
 	   resultTO.setRoute("R123");
-	   resultTO.setArrivalDelay("30 Mins");
+	   resultTO.setArrivalDelayMins(30);
       return resultTO; 
    }  
 }

@@ -27,6 +27,64 @@ import io.swagger.annotations.ApiResponses;
 @Path("/emulator") 
 public class VehicleSignalEmulator {
 
+	
+	@POST 
+	   @Path("/postVehicleEvents") 
+		@Consumes(MediaType.APPLICATION_JSON) 
+	   @Produces(MediaType.APPLICATION_JSON) 
+		@ApiOperation(value="Post events from emulator for the given vehicle", response=String.class)
+		@ApiResponses({ @ApiResponse(code = 200, response = String.class, message = "Success Count from emulator") })
+	public static String postVehicleEvents(String inputString) throws Exception
+	{
+		int successMsgCount = 0;
+		
+		final String namespaceName = "livetrafficdataeventhub";
+	    final String eventHubName = "trafficdataeventhub";
+	    final String sasKeyName = "RootManageSharedAccessKey";
+	    final String sasKey = "PAmj+dy6dGuHXAajDltMD0wwtf8j+OYH8S92X2j9Ua4=";
+	    //Endpoint=sb://livetrafficdataeventhub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=PAmj+dy6dGuHXAajDltMD0wwtf8j+OYH8S92X2j9Ua4=
+	    ConnectionStringBuilder connStr = new ConnectionStringBuilder(namespaceName, eventHubName, sasKeyName, sasKey);
+	    EventHubClient ehClient = EventHubClient.createFromConnectionStringSync(connStr.toString());
+	    System.out.println("Posting URL:"+ connStr.toString());
+	    
+	    
+	    JSONArray jsonArray = new JSONArray(inputString);
+	    
+		if (jsonArray != null)
+		{
+			int length = jsonArray.length();
+			
+			for (int i=0; i < length; i++)
+			{
+				JSONObject jsonObj = jsonArray.getJSONObject(i);
+				if (jsonObj != null)
+				{
+					System.out.println("Preparing the event:" + jsonObj);
+				    EventData sendEvent = new EventData(jsonObj.toString().getBytes());
+
+				    
+				    ehClient.sendSync(sendEvent);
+				    
+				    successMsgCount++;
+
+				    System.out.println("Event posted");
+				    
+				    System.out.println("waiting for 5 secs..");
+				    Thread.sleep(5000);
+				    
+				}
+			}
+		}
+		
+		// close the client at the end of your program
+	    ehClient.closeSync();
+		
+	    System.out.println("All events Posted");
+	    
+	    return new String("{\"successMsgCount\":\"" + successMsgCount + "\"}");
+	}
+	
+	
 	@POST 
 	   @Path("/postEvents") 
 		@Consumes(MediaType.APPLICATION_JSON) 
@@ -82,6 +140,8 @@ public class VehicleSignalEmulator {
 	    
 	    return new String("{\"successMsgCount\":\"" + successMsgCount + "\"}");
 	}
+	
+	
 	
 	public static void main(String[] args) throws EventHubException, ExecutionException, InterruptedException, IOException
 	{
