@@ -168,7 +168,7 @@ public class SmartService {
 			//Check against the latest data available in dump table
 			//Get routeName, TripID
 			//Find the entry for the given routeName-Trip-geoloc, count
-		   VehicleLiveInfoTO vehicleLiveInfoTO = SmartServiceUtil.getVehicleLiveInfo(vehicleInfoTO.getRoute(), vehicleInfoTO.getTripID());
+		   VehicleLiveInfoTO vehicleLiveInfoTO = SmartServiceUtil.getVehicleLiveInfoFrmTable(vehicleInfoTO.getRoute(), vehicleInfoTO.getTripID());
 			if (! vehicleLiveInfoTO.isVehicleMoving() )
 			{
 				resultTO.setMajorWarningInd(true);
@@ -202,7 +202,7 @@ public class SmartService {
 		@ApiResponses({ @ApiResponse(code = 200, response = VehicleLiveInfoTO.class, message = "Get Vehicle Geo Location") })
 	   public VehicleLiveInfoTO getVehicleLocation(@PathParam("routeName") String routeName, @PathParam("tripID") String tripID){
 			
-		VehicleLiveInfoTO vehicleLiveInfoTO = SmartServiceUtil.getVehicleLiveInfo(routeName, tripID);
+		VehicleLiveInfoTO vehicleLiveInfoTO = SmartServiceUtil.getVehicleLiveInfoFrmTable(routeName, tripID);
 		
 		return vehicleLiveInfoTO;
 	}
