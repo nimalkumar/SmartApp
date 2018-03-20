@@ -131,6 +131,8 @@ public class SmartService {
 					
    
 		   resultTO.setRoute(vehicleInfoTO.getRoute());
+		   resultTO.setTripID(vehicleInfoTO.getTripID());
+		   resultTO.setStopID(vehicleInfoTO.getStopID());
 		   resultTO.setWeatherFactor(weatherInfoTO.printFactors());
 		   resultTO.setWeatherIndication(weatherInfoTO.getEvent());
 		   resultTO.setTrafficFactor(trafficInfoTO.printFactors());
