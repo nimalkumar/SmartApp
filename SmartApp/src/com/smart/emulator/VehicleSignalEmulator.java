@@ -69,8 +69,8 @@ public class VehicleSignalEmulator {
 
 				    System.out.println("Event posted");
 				    
-				    System.out.println("waiting for 5 secs..");
-				    Thread.sleep(5000);
+				    System.out.println("waiting for 10 secs..");
+				    Thread.sleep(10000);
 				    
 				}
 			}
